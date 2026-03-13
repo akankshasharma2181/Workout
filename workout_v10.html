@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Workout">
+<meta name="theme-color" content="#2D6A4F">
+<title>Your Dumbbell Workout Plan</title>
+<style>
+  :root{--bg:#F7F4EF;--surface:#FFFFFF;--surface2:#F0EDE8;--text:#1A1714;--text-muted:#7A7570;--text-hint:#B0ABA5;--green:#2D6A4F;--green-light:#D8EFDF;--green-mid:#74C69D;--blue:#1B4F72;--blue-light:#D6EAF8;--purple:#4A235A;--purple-light:#E8D5F0;--amber:#7D4E24;--amber-light:#FAE5D3;--red:#C0392B;--red-light:#FADBD8;--border:rgba(26,23,20,0.1);--border-strong:rgba(26,23,20,0.18);--radius:14px;--radius-sm:8px;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .header{background:var(--green);color:#fff;padding:2.5rem 1.5rem 1.5rem;text-align:center;}
+  .header h1{font-size:1.75rem;font-weight:700;letter-spacing:-0.5px;margin-bottom:4px;}
+  .header p{font-size:13px;opacity:0.8;line-height:1.6;}
+  /* TIMER */
+  .timer-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .timer-left{display:flex;flex-direction:column;}
+  .timer-display{font-size:1.6rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:2px;color:var(--text-muted);}
+  .timer-display.running{color:var(--green);}
+  .timer-label{font-size:11px;color:var(--text-muted);margin-top:1px;}
+  .timer-btns{display:flex;gap:8px;}
+  .t-btn{padding:8px 18px;border-radius:50px;font-size:13px;font-weight:600;border:none;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:inherit;}
+  .t-btn.go{background:var(--green);color:#fff;}
+  .t-btn.pause{background:var(--red-light);color:var(--red);}
+  .t-btn.reset{background:var(--surface2);color:var(--text-muted);}
+  /* STATS */
+  .stats-row{display:flex;background:var(--surface);border-bottom:1px solid var(--border);}
+  .stat{flex:1;text-align:center;padding:14px 6px;border-right:1px solid var(--border);}
+  .stat:last-child{border-right:none;}
+  .stat-val{font-size:1.2rem;font-weight:700;color:var(--green);}
+  .stat-lbl{font-size:11px;color:var(--text-muted);margin-top:2px;}
+  /* NAV */
+  .week-nav-wrap{background:var(--surface);padding:10px 12px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+  .week-nav{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+  .day-btn{padding:8px 14px;border:1px solid var(--border-strong);border-radius:50px;background:transparent;font-family:inherit;font-size:13px;font-weight:500;color:var(--text-muted);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .day-btn.active{background:var(--green);border-color:var(--green);color:#fff;}
+  .day-btn.rest{opacity:0.55;}
+  /* CONTENT */
+  .content{padding:1.25rem 1rem 3rem;max-width:680px;margin:0 auto;}
+  .day-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;margin-bottom:1rem;}
+  .day-card-header{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .day-title{font-size:1.3rem;font-weight:700;color:var(--text);line-height:1.2;}
+  .day-sub{font-size:13px;color:var(--text-muted);margin-top:4px;line-height:1.5;}
+  .type-badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:50px;white-space:nowrap;letter-spacing:0.4px;text-transform:uppercase;flex-shrink:0;margin-top:3px;}
+  .badge-upper{background:var(--blue-light);color:var(--blue);}
+  .badge-lower{background:var(--green-light);color:var(--green);}
+  .badge-full{background:var(--purple-light);color:var(--purple);}
+  .badge-rest{background:var(--surface2);color:var(--text-muted);}
+  .progress-section{padding:12px 1.25rem;}
+  .progress-info{display:flex;justify-content:space-between;margin-bottom:6px;}
+  .progress-info span{font-size:12px;color:var(--text-muted);}
+  .progress-info strong{font-size:12px;color:var(--green);font-weight:600;}
+  .progress-bar{height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+  .progress-fill{height:100%;background:var(--green);border-radius:3px;transition:width 0.3s;}
+  /* EXERCISES */
+  .exercise-list{padding:0.5rem 1rem 1rem;display:flex;flex-direction:column;gap:8px;}
+  .exercise{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--surface);}
+  .exercise.done{border-color:var(--green-mid);background:#F4FBF7;}
+  .ex-top{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;background:transparent;border:none;width:100%;text-align:left;font-family:inherit;}
+  .check-circle{width:24px;height:24px;border-radius:50%;border:1.5px solid var(--border-strong);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;color:transparent;-webkit-tap-highlight-color:transparent;transition:background 0.15s,border-color 0.15s;}
+  .check-circle.done{background:var(--green);border-color:var(--green);color:#fff;}
+  .ex-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;}
+  .num-upper{background:var(--blue-light);color:var(--blue);}
+  .num-lower{background:var(--green-light);color:var(--green);}
+  .num-full{background:var(--purple-light);color:var(--purple);}
+  .ex-info{flex:1;min-width:0;}
+  .ex-name{font-size:14px;font-weight:500;color:var(--text);}
+  .ex-name.struck{text-decoration:line-through;color:var(--text-hint);}
+  .ex-sets{font-size:12px;color:var(--text-muted);margin-top:2px;}
+  .chevron{font-size:11px;color:var(--text-hint);flex-shrink:0;transition:transform 0.2s;display:inline-block;}
+  .chevron.open{transform:rotate(180deg);}
+  /* REP COUNTER */
+  .rep-block{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+  .rep-val{font-size:15px;font-weight:700;color:var(--green);min-width:26px;text-align:center;}
+  .rep-lbl-tiny{font-size:9px;color:var(--text-hint);text-align:center;margin-top:1px;}
+  .rb{width:28px;height:28px;border-radius:50%;border:none;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;font-family:inherit;transition:transform 0.1s;}
+  .rb.plus{background:var(--green);color:#fff;}
+  .rb.minus{background:var(--surface2);color:var(--text-muted);}
+  .rb:active{transform:scale(0.85);}
+  /* DETAIL */
+  .ex-detail{display:none;padding:0 14px 14px;}
+  .ex-detail.open{display:block;}
+
+  /* VIDEO: Wikimedia Commons iframe embed — loads like a webpage, no CORS */
+  .vid-container{position:relative;width:100%;padding-bottom:56.25%;height:0;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:10px;background:#111;}
+  .vid-container iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:none;}
+  /* Tap-to-reveal poster */
+  .vid-poster{width:100%;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:10px;background:linear-gradient(135deg,#1a2e1a,#2d4a2d);cursor:pointer;border:2px dashed rgba(45,106,79,0.4);display:block;text-align:left;}
+  .vid-poster-inner{display:flex;align-items:center;gap:14px;padding:14px 16px;}
+  .vid-play-icon{width:48px;height:48px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .vid-play-icon svg{width:20px;height:20px;fill:#fff;margin-left:3px;}
+  .vid-poster-text{color:#fff;}
+  .vid-poster-title{font-size:13px;font-weight:600;margin-bottom:3px;}
+  .vid-poster-sub{font-size:11px;opacity:0.65;}
+  /* GIF fallback */
+  .vid-gif{text-align:center;margin-bottom:10px;background:#f5f5f5;border-radius:var(--radius-sm);padding:10px 0 6px;}
+  .vid-gif img{max-height:200px;width:auto;border-radius:6px;}
+  .vid-gif-lbl{font-size:10px;color:#999;margin-top:4px;}
+
+  .ex-desc{font-size:13px;color:var(--text-muted);line-height:1.65;margin-bottom:8px;}
+  .ex-tip{font-size:12px;background:var(--green-light);color:var(--green);border-radius:var(--radius-sm);padding:8px 12px;line-height:1.55;}
+  .rest-card{background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);padding:2.5rem 1.5rem;text-align:center;margin-bottom:1rem;}
+  .rest-icon{font-size:2.5rem;margin-bottom:1rem;}
+  .rest-title{font-size:1.25rem;font-weight:700;margin-bottom:8px;}
+  .rest-desc{font-size:13px;color:var(--text-muted);line-height:1.7;}
+  .tips-card{background:var(--amber-light);border-radius:var(--radius);border:1px solid rgba(125,78,36,0.15);padding:1.25rem;}
+  .tips-title{font-size:12px;font-weight:700;color:var(--amber);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:10px;}
+  .tips-list{font-size:13px;color:#5A3710;line-height:2;}
+  .reset-btn{margin-top:1rem;width:100%;padding:10px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);background:transparent;font-family:inherit;font-size:13px;color:var(--text-muted);cursor:pointer;}
+  .install-hint{display:none;background:var(--blue-light);color:var(--blue);font-size:12px;padding:8px 14px;text-align:center;}
+
+  /* WARMUP / COOLDOWN / CUSTOM */
+  :root{--teal:#0B6157;--teal-light:#D0ECE7;--coral:#784212;--coral-light:#FDEBD0;}
+  .day-btn.warmup{background:var(--teal-light);border-color:var(--teal);color:var(--teal);}
+  .day-btn.warmup.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+  .day-btn.cooldown{background:var(--blue-light);border-color:var(--blue);color:var(--blue);}
+  .day-btn.cooldown.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .day-btn.custom-day{border-style:dashed;}
+  .badge-warmup{background:var(--teal-light);color:var(--teal);}
+  .badge-cooldown{background:var(--blue-light);color:var(--blue);}
+  .badge-custom{background:var(--amber-light);color:var(--amber);}
+  .num-warmup{background:var(--teal-light);color:var(--teal);}
+  .num-cooldown{background:var(--blue-light);color:var(--blue);}
+  .num-custom{background:var(--amber-light);color:var(--amber);}
+  .special-card{border-radius:var(--radius);border:1px solid var(--border);overflow:hidden;margin-bottom:1rem;}
+  .special-card.warmup-card{background:linear-gradient(160deg,#eafaf4,#f7fefb);}
+  .special-card.cooldown-card{background:linear-gradient(160deg,#eaf4fb,#f4f8ff);}
+  .special-header{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+  .special-note{font-size:12px;border-radius:var(--radius-sm);padding:10px 14px;margin:0 1rem 1rem;line-height:1.7;}
+  .warmup-note{background:var(--teal-light);color:var(--teal);}
+  .cooldown-note{background:var(--blue-light);color:var(--blue);}
+  .del-day-btn{margin-top:.5rem;width:100%;padding:9px;border:1px solid #f5c6c6;border-radius:var(--radius-sm);background:transparent;font-family:inherit;font-size:12px;color:var(--red);cursor:pointer;}
+
+  /* FLOATING ADD BUTTON */
+  .fab{position:fixed;bottom:24px;right:20px;width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;border:none;font-size:28px;line-height:1;cursor:pointer;box-shadow:0 4px 18px rgba(45,106,79,.45);display:flex;align-items:center;justify-content:center;z-index:200;-webkit-tap-highlight-color:transparent;}
+  .fab:active{transform:scale(.92);}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal-sheet{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-width:560px;max-height:92vh;overflow-y:auto;padding:1.5rem 1.25rem 2.5rem;}
+  .modal-title{font-size:1.1rem;font-weight:700;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center;}
+  .modal-close{background:var(--surface2);border:none;width:32px;height:32px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-muted);}
+  .form-lbl{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:block;}
+  .form-row{margin-bottom:14px;}
+  .form-input{width:100%;padding:10px 12px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-family:inherit;font-size:14px;color:var(--text);background:var(--surface);}
+  .form-input:focus{outline:none;border-color:var(--green);}
+  .type-picker{display:flex;gap:7px;flex-wrap:wrap;}
+  .type-opt{padding:7px 14px;border-radius:50px;border:1px solid var(--border-strong);font-size:12px;font-weight:600;cursor:pointer;background:transparent;font-family:inherit;color:var(--text-muted);-webkit-tap-highlight-color:transparent;}
+  .type-opt.sel{border-color:var(--green);background:var(--green-light);color:var(--green);}
+  .ex-build-row{display:flex;gap:8px;padding:10px;border-bottom:1px solid var(--border);}
+  .ex-build-row:last-child{border-bottom:none;}
+  .ex-build-row input{flex:1;padding:8px 10px;border:1px solid var(--border-strong);border-radius:6px;font-family:inherit;font-size:13px;color:var(--text);}
+  .ex-build-row input:focus{outline:none;border-color:var(--green);}
+  .ex-remove{background:var(--red-light);border:none;color:var(--red);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+  .ex-build-list{border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;margin-bottom:8px;}
+  .add-ex-btn{width:100%;padding:9px;border:1px dashed var(--border-strong);border-radius:var(--radius-sm);background:transparent;font-family:inherit;font-size:13px;color:var(--text-muted);cursor:pointer;margin-bottom:14px;}
+  .save-btn{width:100%;padding:13px;background:var(--green);color:#fff;border:none;border-radius:var(--radius-sm);font-family:inherit;font-size:15px;font-weight:600;cursor:pointer;}
+
+  .content{padding:1.25rem 1rem 5rem;max-width:680px;margin:0 auto;}
+  @media(max-width:400px){.header h1{font-size:1.4rem;}.day-btn{padding:7px 10px;font-size:12px;}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>&#x1F4AA; Your Dumbbell Plan</h1>
+  <p>3&#8211;4 days/week &middot; body toning &amp; weight loss<br>Hashimoto&#39;s &amp; gluten-intolerance friendly</p>
+</div>
+
+<div class="timer-bar">
+  <div class="timer-left">
+    <div class="timer-display" id="timerDisplay">00:00</div>
+    <div class="timer-label" id="timerLabel">Tap Start when you begin</div>
+  </div>
+  <div class="timer-btns">
+    <button class="t-btn go" id="timerBtn" onclick="toggleTimer()">&#9654; Start</button>
+    <button class="t-btn reset" id="resetBtn" onclick="resetTimer()" style="display:none">Reset</button>
+  </div>
+</div>
+
+<div class="install-hint" id="installHint">&#128241; Add to Home Screen: Share &#8594; &#8220;Add to Home Screen&#8221;</div>
+
+<div class="stats-row">
+  <div class="stat"><div class="stat-val">3&#8211;4x</div><div class="stat-lbl">Days/week</div></div>
+  <div class="stat"><div class="stat-val">40&#8211;50</div><div class="stat-lbl">Mins/session</div></div>
+  <div class="stat"><div class="stat-val">Low impact</div><div class="stat-lbl">Joint friendly</div></div>
+</div>
+
+<div class="week-nav-wrap"><div class="week-nav" id="weekNav"></div></div>
+<div class="content" id="mainContent"></div>
+
+<button class="fab" onclick="openModal()" title="Add custom workout">&#43;</button>
+
+<!-- ADD WORKOUT MODAL -->
+<div class="modal-overlay" id="modalOverlay" onclick="bgClick(event)">
+  <div class="modal-sheet">
+    <div class="modal-title">
+      <span>&#43; Add Custom Workout</span>
+      <button class="modal-close" onclick="closeModal()">&#10005;</button>
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Day label (short, e.g. "Extra")</label>
+      <input class="form-input" id="f_label" placeholder="e.g. Extra" maxlength="8">
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Workout name</label>
+      <input class="form-input" id="f_name" placeholder="e.g. Core & Cardio">
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Description (optional)</label>
+      <input class="form-input" id="f_desc" placeholder="Brief description">
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Type</label>
+      <div class="type-picker" id="typePicker">
+        <button class="type-opt sel" data-v="custom" onclick="pickType(this)">Custom</button>
+        <button class="type-opt" data-v="upper" onclick="pickType(this)">Upper body</button>
+        <button class="type-opt" data-v="lower" onclick="pickType(this)">Lower body</button>
+        <button class="type-opt" data-v="full" onclick="pickType(this)">Full body</button>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-lbl">Exercises</label>
+      <div class="ex-build-list" id="exBuildList"></div>
+      <button class="add-ex-btn" onclick="addExRow()">&#43; Add exercise</button>
+    </div>
+    <button class="save-btn" onclick="saveCustom()">Save workout</button>
+  </div>
+</div>
+
+<script>
+/* === TIMER === */
+var tSec=0,tRunning=false,tInterval=null;
+function pad(n){return n<10?'0'+n:''+n;}
+function fmtTime(s){var h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sc=s%60;return h>0?pad(h)+':'+pad(m)+':'+pad(sc):pad(m)+':'+pad(sc);}
+function toggleTimer(){
+  if(tRunning){
+    clearInterval(tInterval);tRunning=false;
+    document.getElementById('timerBtn').innerHTML='&#9654; Resume';
+    document.getElementById('timerBtn').className='t-btn go';
+    document.getElementById('timerDisplay').className='timer-display';
+    document.getElementById('timerLabel').textContent='Paused \u2014 tap Resume to continue';
+  } else {
+    tRunning=true;
+    document.getElementById('timerBtn').innerHTML='&#9646;&#9646; Pause';
+    document.getElementById('timerBtn').className='t-btn pause';
+    document.getElementById('resetBtn').style.display='';
+    document.getElementById('timerDisplay').className='timer-display running';
+    document.getElementById('timerLabel').textContent='Workout in progress\u2026';
+    tInterval=setInterval(function(){tSec++;document.getElementById('timerDisplay').textContent=fmtTime(tSec);},1000);
+  }
+}
+function resetTimer(){
+  clearInterval(tInterval);tRunning=false;tSec=0;
+  document.getElementById('timerDisplay').textContent='00:00';
+  document.getElementById('timerDisplay').className='timer-display';
+  document.getElementById('timerBtn').innerHTML='&#9654; Start';
+  document.getElementById('timerBtn').className='t-btn go';
+  document.getElementById('resetBtn').style.display='none';
+  document.getElementById('timerLabel').textContent='Tap Start when you begin';
+}
+
+/* === REP COUNTERS === */
+var reps={};
+try{var sr=localStorage.getItem('wk_reps_v9');if(sr)reps=JSON.parse(sr);}catch(e){}
+function saveReps(){try{localStorage.setItem('wk_reps_v9',JSON.stringify(reps));}catch(e){}}
+function changeRep(day,ex,d){
+  var k=day+'-'+ex;reps[k]=Math.max(0,(reps[k]||0)+d);saveReps();
+  var el=document.getElementById('rv-'+k);if(el)el.textContent=reps[k];
+}
+
+/* === DONE CHECKS === */
+var activeDay=0,checked={};
+try{var r=localStorage.getItem('wk_v9');if(r)checked=JSON.parse(r);}catch(e){}
+function save(){try{localStorage.setItem('wk_v9',JSON.stringify(checked));}catch(e){}}
+function numCls(t){return t==='upper'?'num-upper':t==='lower'?'num-lower':'num-full';}
+function badgeCls(t){return t==='upper'?'badge-upper':t==='lower'?'badge-lower':t==='full'?'badge-full':'badge-rest';}
+function badgeTxt(t){return t==='upper'?'Upper body':t==='lower'?'Lower body':t==='full'?'Full body':'Rest';}
+
+/* ================================================================
+   VIDEO STRATEGY
+   ----------------------------------------------------------------
+   We use Wikimedia Commons "embedplayer" iframes.
+   URL format: https://commons.wikimedia.org/wiki/File:FILENAME?embedplayer=yes
+   This loads a full Wikimedia page inside an iframe — it's an
+   HTML page request (not a direct media file), so there are
+   NO CORS issues at all. Works from file:// or any domain.
+   The iframe contains Wikimedia's own HTML5 player with controls.
+
+   GIF_MAP: for exercises without a video, Wikipedia animated GIFs
+   load like images — also completely CORS-free.
+================================================================ */
+
+var VIDEO_MAP = {
+  'Dumbbell shoulder press':
+    'https://commons.wikimedia.org/wiki/File:Shoulder_press_-_exercise_demonstration_video.webm?embedplayer=yes',
+  'Arnold press':
+    'https://commons.wikimedia.org/wiki/File:Shoulder_press_-_exercise_demonstration_video.webm?embedplayer=yes',
+  'Dumbbell thruster':
+    'https://commons.wikimedia.org/wiki/File:Shoulder_press_-_exercise_demonstration_video.webm?embedplayer=yes',
+  'Dumbbell chest press (floor)':
+    'https://commons.wikimedia.org/wiki/File:Video_showing_how_to_perform_the_dumbbell_bench_press_and_the_dumbbell_incline_bench_press.webm?embedplayer=yes',
+  'Dumbbell pull-over':
+    'https://commons.wikimedia.org/wiki/File:Video_showing_how_to_perform_the_dumbbell_bench_press_and_the_dumbbell_incline_bench_press.webm?embedplayer=yes',
+  'Bicep curls':
+    'https://commons.wikimedia.org/wiki/File:Video_of_EZ_Bar_Curl_and_Straight_Bar_Curl.webm?embedplayer=yes',
+  'Hammer curl':
+    'https://commons.wikimedia.org/wiki/File:Video_of_EZ_Bar_Curl_and_Straight_Bar_Curl.webm?embedplayer=yes',
+  'Romanian deadlift':
+    'https://commons.wikimedia.org/wiki/File:Deadlift_-_exercise_demonstration_video.webm?embedplayer=yes',
+  'Dumbbell deadlift':
+    'https://commons.wikimedia.org/wiki/File:Deadlift_-_exercise_demonstration_video.webm?embedplayer=yes',
+  'Stiff-leg deadlift':
+    'https://commons.wikimedia.org/wiki/File:Deadlift_-_exercise_demonstration_video.webm?embedplayer=yes',
+  'Dumbbell goblet squat':
+    'https://commons.wikimedia.org/wiki/File:Kettlebell_Goblet_Squat.webm?embedplayer=yes',
+  'Dumbbell sumo squat':
+    'https://commons.wikimedia.org/wiki/File:Kettlebell_Goblet_Squat.webm?embedplayer=yes',
+  'Dumbbell swing':
+    'https://commons.wikimedia.org/wiki/File:Kettlebell_Swing_Hip_Hinge_Style.webm?embedplayer=yes',
+  'Plank row (renegade row)':
+    'https://commons.wikimedia.org/wiki/File:Push-up_demonstration.webm?embedplayer=yes',
+  'Dumbbell push-up row':
+    'https://commons.wikimedia.org/wiki/File:Push-up_demonstration.webm?embedplayer=yes',
+  'Bent-over dumbbell row':
+    'https://commons.wikimedia.org/wiki/File:Bent_Over_Dumbbell_Row_-_exercise_demonstration.webm?embedplayer=yes',
+  'Glute bridge with dumbbell':
+    'https://commons.wikimedia.org/wiki/File:Glute_bridge_exercise.webm?embedplayer=yes',
+  'Dumbbell reverse lunges':
+    'https://commons.wikimedia.org/wiki/File:Lunge_exercise.webm?embedplayer=yes',
+  'Bulgarian split squat':
+    'https://commons.wikimedia.org/wiki/File:Lunge_exercise.webm?embedplayer=yes',
+  'Dumbbell step-up':
+    'https://commons.wikimedia.org/wiki/File:Step-up_exercise.webm?embedplayer=yes',
+  'Lateral raises':
+    'https://commons.wikimedia.org/wiki/File:Lateral_raise_exercise.webm?embedplayer=yes',
+  'Front raise':
+    'https://commons.wikimedia.org/wiki/File:Lateral_raise_exercise.webm?embedplayer=yes',
+  'Bent-over rear delt fly':
+    'https://commons.wikimedia.org/wiki/File:Lateral_raise_exercise.webm?embedplayer=yes',
+  'Tricep overhead extension':
+    'https://commons.wikimedia.org/wiki/File:Tricep_extension_demonstration.webm?embedplayer=yes',
+  'Single-arm row to press':
+    'https://commons.wikimedia.org/wiki/File:Bent_Over_Dumbbell_Row_-_exercise_demonstration.webm?embedplayer=yes',
+  'Calf raises':
+    'https://commons.wikimedia.org/wiki/File:Calf_raise_demonstration.webm?embedplayer=yes',
+  'Hip thrust (floor)':
+    'https://commons.wikimedia.org/wiki/File:Glute_bridge_exercise.webm?embedplayer=yes',
+  'Lateral lunge':
+    'https://commons.wikimedia.org/wiki/File:Lunge_exercise.webm?embedplayer=yes',
+  'Wall sit with dumbbells':
+    'https://commons.wikimedia.org/wiki/File:Wall_sit_exercise.webm?embedplayer=yes'
+};
+
+// GIF fallbacks from Wikipedia (no CORS, load like images)
+var GIF_MAP = {
+  'Lateral raises': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Dumbbell-lateral-raise-right-side.gif/200px-Dumbbell-lateral-raise-right-side.gif',
+  'Bicep curls': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Curl_anim.gif/200px-Curl_anim.gif',
+  'Hammer curl': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Curl_anim.gif/200px-Curl_anim.gif',
+  'Dumbbell reverse lunges': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Lunges.gif/200px-Lunges.gif',
+  'Lateral lunge': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Lunges.gif/200px-Lunges.gif',
+  'Bulgarian split squat': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Lunges.gif/200px-Lunges.gif',
+  'Dumbbell step-up': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a0/Lunges.gif/200px-Lunges.gif',
+  'Calf raises': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Calf_raise.gif/200px-Calf_raise.gif',
+  'Hip thrust (floor)': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Hip-thrust.gif/200px-Hip-thrust.gif',
+  'Wall sit with dumbbells': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Wall_sit.gif/200px-Wall_sit.gif',
+  'Tricep overhead extension': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Overhead_tricep_extension.gif/200px-Overhead_tricep_extension.gif',
+  'Front raise': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Dumbbell-lateral-raise-right-side.gif/200px-Dumbbell-lateral-raise-right-side.gif',
+  'Bent-over rear delt fly': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Dumbbell-lateral-raise-right-side.gif/200px-Dumbbell-lateral-raise-right-side.gif',
+  'Glute bridge with dumbbell': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Hip-thrust.gif/200px-Hip-thrust.gif',
+  'Stiff-leg deadlift': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/Romanian_deadlift.gif/200px-Romanian_deadlift.gif'
+};
+
+var posterIds = {};
+
+function makeVideoHTML(name) {
+  var url = VIDEO_MAP[name];
+  var uid = 'vp_' + name.replace(/[^a-z0-9]/gi,'_');
+  posterIds[uid] = url || null;
+
+  if (url) {
+    return '<button class="vid-poster" id="' + uid + '" onclick="revealVideo(\'' + uid + '\')">'
+      + '<div class="vid-poster-inner">'
+      + '<div class="vid-play-icon"><svg viewBox="0 0 24 24"><polygon points="5,3 19,12 5,21"/></svg></div>'
+      + '<div class="vid-poster-text">'
+      + '<div class="vid-poster-title">&#9654;&nbsp; Play demo video</div>'
+      + '<div class="vid-poster-sub">Tap to load &bull; plays right here in the app</div>'
+      + '</div></div></button>';
+  }
+
+  var gif = GIF_MAP[name];
+  if (gif) {
+    return '<div class="vid-gif">'
+      + '<img src="' + gif + '" alt="' + name + ' form" onerror="this.parentNode.style.display=\'none\'">'
+      + '<div class="vid-gif-lbl">Animated form reference</div>'
+      + '</div>';
+  }
+  return '';
+}
+
+function revealVideo(uid) {
+  var el = document.getElementById(uid);
+  if (!el) return;
+  var url = posterIds[uid];
+  if (!url) return;
+  var wrap = document.createElement('div');
+  wrap.className = 'vid-container';
+  var iframe = document.createElement('iframe');
+  iframe.src = url;
+  iframe.setAttribute('allowfullscreen', '');
+  iframe.setAttribute('allow', 'autoplay; fullscreen');
+  wrap.appendChild(iframe);
+  el.parentNode.replaceChild(wrap, el);
+}
+
+/* === DATA === */
+var WARMUP_DAY={label:'Warm-up',type:'warmup',name:'Pre-Workout Warm-up',desc:'10 min gentle activation \u2014 reduces cortisol, protects joints for Hashimoto\u2019s',exercises:[
+  {name:'Belly breathing',sets:'2 \u00d7 10 slow breaths',desc:'Lie on back, one hand on belly. Inhale through nose 4 counts (belly rises), exhale through mouth 6 counts. Activates the parasympathetic nervous system.',tip:'Never skip this \u2014 it lowers cortisol before you lift. Crucial for Hashimoto\u2019s.'},
+  {name:'Neck rolls & shoulder circles',sets:'1 \u00d7 8 each direction',desc:'Gentle half-circles with neck side to side (no full backward circles). Then roll shoulders forward 8 times, backward 8 times.',tip:'Releases tension in traps and upper back. Go very slowly.'},
+  {name:'Cat-cow stretch',sets:'2 \u00d7 10 reps',desc:'On hands and knees. Breathe in: drop belly, lift head (cow). Breathe out: round spine up, tuck chin (cat). Move with your breath.',tip:'Mobilises the entire spine. Especially helpful if you have morning stiffness from thyroid inflammation.'},
+  {name:'Hip circles',sets:'1 \u00d7 10 each direction',desc:'Stand feet hip-width, hands on hips. Draw large slow circles with your hips. Clockwise then counter-clockwise.',tip:'Opens hips and warms glutes before any squat or lunge variation.'},
+  {name:'Leg swings',sets:'1 \u00d7 10 each leg',desc:'Hold a wall for balance. Swing one leg forward and back 10 times, then side to side 10 times. Keep upper body still.',tip:'Dynamic hip flexor activation. Prepares knees and hips for loading.'},
+  {name:'Arm circles & chest opener',sets:'1 \u00d7 10 each direction',desc:'Small to large arm circles forward then backward. Then clasp hands behind your back and gently open the chest, holding 5 seconds.',tip:'Activates the rotator cuff before any pressing or rowing movement.'},
+  {name:'Slow bodyweight squats',sets:'2 \u00d7 10 reps',desc:'Feet shoulder-width, toes slightly out. Take 3 seconds to lower, 1 second hold at bottom, 2 seconds to rise. No weight.',tip:'Movement pattern check before loading. If any knee pain, reduce depth.'}
+]};
+
+var COOLDOWN_DAY={label:'Cool-down',type:'cooldown',name:'Post-Workout Cool-down',desc:'8\u201310 min stretching \u2014 lowers cortisol & supports thyroid recovery',exercises:[
+  {name:'Child\'s pose',sets:'Hold 60 seconds',desc:'Kneel on floor, sit back toward heels, reach arms forward on the floor. Let your forehead rest down. Breathe deeply.',tip:'The best post-workout decompressor. Relieves lower back and hip tension.'},
+  {name:'Seated hamstring stretch',sets:'Hold 40 sec each leg',desc:'Sit on floor, one leg straight, other foot tucked in. Reach toward your straight foot. Keep back long, not rounded.',tip:'Essential after any deadlift or squat. Hold gently \u2014 never bounce.'},
+  {name:'Hip flexor lunge stretch',sets:'Hold 40 sec each side',desc:'Low lunge: one knee on floor, other foot forward. Shift weight forward gently until you feel a stretch in the front of the back hip.',tip:'Counteracts the hip tightening from weighted squats and lunges.'},
+  {name:'Pigeon pose (or figure-4)',sets:'Hold 45 sec each side',desc:'Lying on back: cross one ankle over opposite knee, flex foot, and gently pull the legs toward your chest. Breathe into the outer hip.',tip:'Releases glutes and piriformis. Especially important on lower body days.'},
+  {name:'Thread-the-needle shoulder stretch',sets:'Hold 30 sec each side',desc:'On hands and knees, slide one arm along the floor under your body until shoulder touches ground. Hold.',tip:'Decompresses the upper spine and releases shoulder tension from pressing exercises.'},
+  {name:'Chest doorway stretch',sets:'Hold 30 sec \u00d7 2',desc:'Stand in doorway, place forearms on frame at 90\u00b0. Gently lean forward until you feel a stretch across the chest. Hold.',tip:'Counteracts the forward rounding from bench press and rows.'},
+  {name:'Supine spinal twist',sets:'Hold 40 sec each side',desc:'Lie on back, bring one knee across body to opposite side. Extend that arm out flat. Look away from your knee.',tip:'Releases the spine after a full workout. End every session with this.'},
+  {name:'Legs-up-the-wall & deep breathing',sets:'3\u20135 minutes',desc:'Lie on back with legs resting up a wall. Close eyes. Slow deep breaths. Simply rest.',tip:'Activates the parasympathetic system and keeps cortisol from spiking after exercise. Critical for Hashimoto\u2019s recovery.'}
+]};
+
+var BUILTIN_DAYS=[
+  WARMUP_DAY,
+  {label:'Mon',name:'Upper body',type:'upper',desc:'Shoulders, chest, back and arms \u2014 sculpting your upper silhouette',exercises:[
+    {name:'Dumbbell shoulder press',sets:'3 \u00d7 12 reps',desc:'Stand or sit, dumbbells at ear height, press overhead until arms are nearly straight. Control the lowering phase.',tip:'Keep core braced and avoid arching lower back. Start with 4\u20136 kg.'},
+    {name:'Bent-over dumbbell row',sets:'3 \u00d7 12 reps each side',desc:'Hinge at hips, flat back, pull dumbbell to hip crease. Squeeze shoulder blade at the top.',tip:'Essential for a defined upper back and good posture. Keep elbows close to body.'},
+    {name:'Dumbbell chest press (floor)',sets:'3 \u00d7 12 reps',desc:'Lie on back, feet flat, press dumbbells up from chest level. The floor limits range, protecting shoulders.',tip:'Great chest shaping without a bench. Keep wrists stacked over elbows.'},
+    {name:'Lateral raises',sets:'3 \u00d7 15 reps',desc:'Stand with dumbbells at sides, raise to shoulder height with slight elbow bend. Lower slowly.',tip:'Use light weight (2\u20134 kg). Builds rounded shoulder caps that make waists look smaller.'},
+    {name:'Bicep curls',sets:'3 \u00d7 12 reps',desc:'Palms facing up, curl dumbbells to shoulders. Keep elbows pinned to sides.',tip:'Supinate (turn palms up) at the top for full bicep activation.'},
+    {name:'Tricep overhead extension',sets:'3 \u00d7 12 reps',desc:'Hold one dumbbell overhead with both hands, lower behind head, extend back up.',tip:'Tones the backs of arms \u2014 great for arm definition.'}
+  ]},
+  {label:'Tue',name:'Lower body',type:'lower',desc:'Glutes, quads, hamstrings and calves \u2014 building a strong, toned lower body',exercises:[
+    {name:'Dumbbell goblet squat',sets:'3 \u00d7 15 reps',desc:'Hold one dumbbell at chest, squat deep keeping chest tall and knees tracking toes.',tip:'The best lower-body toning move. Go as deep as comfortable \u2014 deeper means more glute activation.'},
+    {name:'Romanian deadlift',sets:'3 \u00d7 12 reps',desc:'Hold dumbbells in front, hinge at hips with soft knees, feel hamstring stretch, drive hips forward to stand.',tip:'Low-impact and great for hamstrings and glutes. Keep back flat throughout.'},
+    {name:'Dumbbell reverse lunges',sets:'3 \u00d7 10 reps each leg',desc:'Step back instead of forward. Lower back knee toward floor, return to standing.',tip:'More knee-friendly than forward lunges \u2014 great for Hashimoto\u2019s joint sensitivity.'},
+    {name:'Dumbbell sumo squat',sets:'3 \u00d7 15 reps',desc:'Wide stance, toes out, hold one dumbbell in both hands. Squat down keeping torso upright.',tip:'Targets inner thighs and glutes intensely. Pause 1 second at the bottom.'},
+    {name:'Glute bridge with dumbbell',sets:'3 \u00d7 15 reps',desc:'Lie on back, dumbbell on hips, drive hips up squeezing glutes at top. Hold 1 second.',tip:'Best isolation move for glute shaping. Use a heavier dumbbell here \u2014 10\u201315 kg.'},
+    {name:'Calf raises',sets:'3 \u00d7 20 reps',desc:'Stand on a step edge or flat floor, hold dumbbells at sides, rise onto toes, lower slowly.',tip:'Slow lowering (3 seconds down) builds defined calf muscles quickly.'}
+  ]},
+  {label:'Wed',name:'Rest day',type:'rest',desc:'',exercises:[]},
+  {label:'Thu',name:'Full body',type:'full',desc:'Compound movements that burn fat and work multiple muscle groups at once',exercises:[
+    {name:'Dumbbell deadlift',sets:'3 \u00d7 12 reps',desc:'Both dumbbells in front of legs, hinge at hips then stand tall.',tip:'One of the highest calorie-burning dumbbell moves. Builds the whole posterior chain.'},
+    {name:'Dumbbell thruster',sets:'3 \u00d7 10 reps',desc:'Squat with dumbbells at shoulders, stand and press them overhead in one smooth motion.',tip:'Full body power move \u2014 burns significant calories. Go lighter and focus on smooth form.'},
+    {name:'Single-arm row to press',sets:'3 \u00d7 10 reps each side',desc:'Row the dumbbell to hip, then press it overhead in sequence. Back and shoulder in one move.',tip:'Great for balance and coordination. Use one side at a time.'},
+    {name:'Dumbbell step-up',sets:'3 \u00d7 12 reps each leg',desc:'Step onto a sturdy bench or step holding dumbbells. Drive through the heel of the working leg.',tip:'If no bench, use the bottom stair step. Builds glutes and quads simultaneously.'},
+    {name:'Plank row (renegade row)',sets:'3 \u00d7 8 reps each side',desc:'In push-up position with dumbbells, row one dumbbell at a time keeping hips still.',tip:'Incredible core and back combo. Use lighter dumbbells. Go slow.'},
+    {name:'Dumbbell swing',sets:'3 \u00d7 15 reps',desc:'Hinge at hips swinging dumbbell between legs, then drive hips forward swinging it to chest height.',tip:'Mimics a kettlebell swing \u2014 great cardio and posterior chain. Keep back flat, not rounded.'}
+  ]},
+  {label:'Fri',name:'Lower body II',type:'lower',desc:'Second lower session \u2014 different angles to build a complete lower body',exercises:[
+    {name:'Bulgarian split squat',sets:'3 \u00d7 10 reps each leg',desc:'Rear foot elevated on chair, front foot forward. Lower straight down, keeping torso tall.',tip:'One of the best glute and quad shapers. Challenging but very effective.'},
+    {name:'Stiff-leg deadlift',sets:'3 \u00d7 12 reps',desc:'Like Romanian deadlift but legs stay straighter \u2014 more hamstring stretch, less knee bend.',tip:'Feel a deep stretch in the back of your legs. Do not lock knees completely.'},
+    {name:'Lateral lunge',sets:'3 \u00d7 10 reps each side',desc:'Step wide to one side, bend that knee while the other leg stays straight. Push back to center.',tip:'Targets inner and outer thighs \u2014 essential for leg toning. Use light to moderate weight.'},
+    {name:'Hip thrust (floor)',sets:'3 \u00d7 15 reps',desc:'Upper back on sofa edge, dumbbell on hips, thrust hips to ceiling. Squeeze at top.',tip:'Most effective glute-building exercise. Go heavy \u2014 you will feel it instantly.'},
+    {name:'Wall sit with dumbbells',sets:'3 \u00d7 30 seconds',desc:'Back flat against wall, thighs parallel to floor, hold dumbbells on thighs.',tip:'Isometric quad burn \u2014 great for toning without joint impact. Breathe steadily.'}
+  ]},
+  {label:'Sat',name:'Upper body II',type:'upper',desc:'Back and shoulder focus for a defined, sculpted upper body',exercises:[
+    {name:'Arnold press',sets:'3 \u00d7 12 reps',desc:'Start with dumbbells at chin, palms facing you. Rotate hands outward as you press overhead.',tip:'Hits all three heads of the shoulder \u2014 better for full definition than standard press.'},
+    {name:'Dumbbell pull-over',sets:'3 \u00d7 12 reps',desc:'Lie on floor, one dumbbell in both hands overhead, lower behind head then pull back up.',tip:'Excellent for back width and chest. Stretch and squeeze at each end of the movement.'},
+    {name:'Front raise',sets:'3 \u00d7 12 reps',desc:'Hold dumbbells in front of thighs, raise to shoulder height with straight arms. Lower slowly.',tip:'Use light weight \u2014 3\u20135 kg. Slow and controlled beats heavy and sloppy.'},
+    {name:'Hammer curl',sets:'3 \u00d7 12 reps',desc:'Palms facing each other (thumbs up), curl to shoulders. Works both bicep and forearm.',tip:'Variation from standard curl \u2014 keeps arms looking lean and defined from all angles.'},
+    {name:'Bent-over rear delt fly',sets:'3 \u00d7 15 reps',desc:'Hinge forward, arms hanging, raise both dumbbells out to sides like wings.',tip:'Very light weight here (2\u20133 kg). Defines the back of shoulders and upper back.'},
+    {name:'Dumbbell push-up row',sets:'3 \u00d7 8 reps each side',desc:'Push-up position on dumbbells, do a push-up, then row one arm at a time.',tip:'Combines chest and back. If push-ups are hard, drop to knees.'}
+  ]},
+  {label:'Sun',name:'Rest day',type:'rest',desc:'',exercises:[]},
+  COOLDOWN_DAY
+];
+
+/* Custom workouts stored in localStorage */
+var customDays=[];
+try{var _cd=localStorage.getItem('wk_custom_v10');if(_cd)customDays=JSON.parse(_cd);}catch(e){}
+function saveCustomDays(){try{localStorage.setItem('wk_custom_v10',JSON.stringify(customDays));}catch(e){}}
+
+function allDays(){return BUILTIN_DAYS.concat(customDays);}
+
+/* === HELPERS === */
+function numCls(t){return t==='upper'?'num-upper':t==='lower'?'num-lower':t==='warmup'?'num-warmup':t==='cooldown'?'num-cooldown':t==='custom'?'num-custom':'num-full';}
+function badgeCls(t){return t==='upper'?'badge-upper':t==='lower'?'badge-lower':t==='full'?'badge-full':t==='warmup'?'badge-warmup':t==='cooldown'?'badge-cooldown':t==='custom'?'badge-custom':'badge-rest';}
+function badgeTxt(t){return t==='upper'?'Upper body':t==='lower'?'Lower body':t==='full'?'Full body':t==='warmup'?'Warm-up':t==='cooldown'?'Cool-down':t==='custom'?'Custom':'Rest';}
+
+/* === RENDER NAV === */
+function renderNav(){
+  var days=allDays(),nav=document.getElementById('weekNav'),h='';
+  for(var i=0;i<days.length;i++){
+    var d=days[i];
+    var cls='day-btn';
+    if(i===activeDay) cls+=' active';
+    if(d.type==='rest') cls+=' rest';
+    if(d.type==='warmup') cls+=' warmup';
+    if(d.type==='cooldown') cls+=' cooldown';
+    if(d._custom) cls+=' custom-day';
+    h+='<button class="'+cls+'" onclick="setDay('+i+')">'+d.label+'</button>';
+  }
+  nav.innerHTML=h;
+}
+
+/* === RENDER DAY === */
+function renderDay(){
+  var days=allDays(),d=days[activeDay],k=activeDay;
+  var total=d.exercises.length,dc=0;
+  for(var i=0;i<total;i++){if(checked[k+'-'+i])dc++;}
+  var pct=total>0?Math.round((dc/total)*100):0;
+  var h='';
+
+  if(d.type==='rest'){
+    h='<div class="rest-card"><div class="rest-icon">&#127807;</div><div class="rest-title">Rest &amp; recover</div><div class="rest-desc">Your body builds muscle and burns fat during recovery.<br>Light walking (20 min), gentle stretching, or yoga are perfect today.<br>Stay hydrated and eat protein to support thyroid and muscle repair.</div></div>';
+  } else {
+    /* choose card colour class for warmup/cooldown */
+    var cardExtra = d.type==='warmup'?' warmup-card':d.type==='cooldown'?' cooldown-card':'';
+    h='<div class="day-card special-card'+cardExtra+'">'
+     +'<div class="day-card-header special-header"><div>'
+     +'<div class="day-title">'+d.label+' &#8212; '+d.name+'</div>'
+     +'<div class="day-sub">'+d.desc+'</div></div>'
+     +'<span class="type-badge '+badgeCls(d.type)+'">'+badgeTxt(d.type)+'</span></div>'
+     +'<div class="progress-section"><div class="progress-info"><span>'+dc+' of '+total+' done</span><strong>'+pct+'%</strong></div>'
+     +'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div></div>'
+     +'<div class="exercise-list">';
+
+    for(var j=0;j<total;j++){
+      var ex=d.exercises[j],done=!!checked[k+'-'+j],ek=k+'-'+j,rv=(reps[ek]||0);
+      h+='<div class="exercise'+(done?' done':'')+'"><div class="ex-top" onclick="toggleEx('+j+')">'
+        +'<div class="check-circle'+(done?' done':'')+'" onclick="event.stopPropagation();chk('+k+','+j+')">'+(done?'&#10003;':'')+'</div>'
+        +'<div class="ex-num '+numCls(d.type)+'">'+(j+1)+'</div>'
+        +'<div class="ex-info"><div class="ex-name'+(done?' struck':'')+'">'+ex.name+'</div><div class="ex-sets">'+ex.sets+'</div></div>'
+        +'<div class="rep-block" onclick="event.stopPropagation()">'
+        +'<button class="rb minus" onclick="changeRep('+k+','+j+',-1)">&#8722;</button>'
+        +'<div style="display:flex;flex-direction:column;align-items:center"><div class="rep-val" id="rv-'+ek+'">'+rv+'</div><div class="rep-lbl-tiny">reps</div></div>'
+        +'<button class="rb plus" onclick="changeRep('+k+','+j+',1)">+</button>'
+        +'</div>'
+        +'<span class="chevron" id="ch'+j+'">&#9660;</span></div>'
+        +'<div class="ex-detail" id="dt'+j+'">'+makeVideoHTML(ex.name)+'<div class="ex-desc">'+ex.desc+'</div><div class="ex-tip"><strong>Tip:</strong> '+ex.tip+'</div></div>'
+        +'</div>';
+    }
+    h+='</div></div>';
+
+    /* special info note for warmup / cooldown */
+    if(d.type==='warmup'){
+      h+='<div class="special-note warmup-note">&#127807; <strong>Do this before every workout.</strong> Takes 10 minutes. The belly breathing step is especially important for Hashimoto\'s \u2014 it reduces pre-workout cortisol so your thyroid isn\'t stressed further.</div>';
+    } else if(d.type==='cooldown'){
+      h+='<div class="special-note cooldown-note">&#10024; <strong>Do this after every workout.</strong> Takes 8\u201310 minutes. The legs-up-the-wall at the end is the single most effective thing you can do to keep post-exercise cortisol low and protect thyroid function.</div>';
+    }
+
+    h+='<button class="reset-btn" onclick="resetDay('+k+')">Reset progress &amp; rep counts</button>';
+    if(d._custom){
+      h+='<button class="del-day-btn" onclick="deleteCustomDay('+k+')">&#128465; Delete this workout</button>';
+    }
+  }
+
+  /* tips card — skip for warmup/cooldown */
+  if(d.type!=='warmup'&&d.type!=='cooldown'){
+    h+='<div class="tips-card" style="margin-top:1rem"><div class="tips-title">Hashimoto\'s &amp; gluten intolerance notes</div><div class="tips-list">&#8226; Keep sessions under 60 mins to avoid cortisol spikes<br>&#8226; Rest 2+ mins between sets on high-fatigue days<br>&#8226; If energy is low (flare), reduce weight 20&#8211;30% &#8212; don\'t skip entirely<br>&#8226; Avoid gluten-containing protein bars/shakes; opt for rice or egg-based<br>&#8226; Prioritise sleep &#8212; thyroid recovery happens overnight</div></div>';
+  }
+
+  document.getElementById('mainContent').innerHTML=h;
+}
+
+function toggleEx(j){
+  var dt=document.getElementById('dt'+j),ch=document.getElementById('ch'+j);
+  if(!dt)return;
+  var open=dt.classList.contains('open');
+  dt.className='ex-detail'+(open?'':' open');
+  ch.className='chevron'+(open?'':' open');
+}
+function chk(day,ex){var k=day+'-'+ex;checked[k]=!checked[k];save();renderDay();}
+function resetDay(day){
+  var days=allDays();
+  for(var i=0;i<days[day].exercises.length;i++){delete checked[day+'-'+i];delete reps[day+'-'+i];}
+  save();saveReps();renderDay();
+}
+function setDay(i){activeDay=i;renderNav();renderDay();}
+
+function deleteCustomDay(idx){
+  var days=allDays();
+  var label=days[idx].name;
+  if(!confirm('Delete "'+label+'"?'))return;
+  var cIdx=idx-BUILTIN_DAYS.length;
+  customDays.splice(cIdx,1);
+  saveCustomDays();
+  activeDay=0;
+  renderNav();renderDay();
+}
+
+/* === CUSTOM WORKOUT MODAL === */
+var _selType='custom';
+var _exRows=[];
+
+function openModal(){
+  _selType='custom';_exRows=[];
+  document.getElementById('f_label').value='';
+  document.getElementById('f_name').value='';
+  document.getElementById('f_desc').value='';
+  document.querySelectorAll('.type-opt').forEach(function(b){b.className='type-opt'+(b.dataset.v==='custom'?' sel':'');});
+  renderExRows();
+  document.getElementById('modalOverlay').className='modal-overlay open';
+}
+function closeModal(){document.getElementById('modalOverlay').className='modal-overlay';}
+function bgClick(e){if(e.target.id==='modalOverlay')closeModal();}
+
+function pickType(btn){
+  _selType=btn.dataset.v;
+  document.querySelectorAll('.type-opt').forEach(function(b){b.className='type-opt'+(b===btn?' sel':'');});
+}
+
+function addExRow(name,sets){
+  _exRows.push({name:name||'',sets:sets||''});
+  renderExRows();
+}
+function removeExRow(i){_exRows.splice(i,1);renderExRows();}
+function renderExRows(){
+  var list=document.getElementById('exBuildList');if(!list)return;
+  var h='';
+  for(var i=0;i<_exRows.length;i++){
+    h+='<div class="ex-build-row">'
+     +'<input placeholder="Exercise name" value="'+_exRows[i].name.replace(/"/g,'&quot;')+'" oninput="_exRows['+i+'].name=this.value">'
+     +'<input placeholder="e.g. 3 \u00d7 12 reps" style="max-width:130px" value="'+_exRows[i].sets.replace(/"/g,'&quot;')+'" oninput="_exRows['+i+'].sets=this.value">'
+     +'<button class="ex-remove" onclick="removeExRow('+i+')">&#215;</button>'
+     +'</div>';
+  }
+  list.innerHTML=h||'<div style="padding:12px;font-size:13px;color:var(--text-hint);text-align:center">No exercises yet \u2014 tap below to add</div>';
+}
+
+function saveCustom(){
+  var label=(document.getElementById('f_label').value||'').trim();
+  var name=(document.getElementById('f_name').value||'').trim();
+  var desc=(document.getElementById('f_desc').value||'').trim();
+  if(!label){alert('Please add a day label (e.g. "Extra").');return;}
+  if(!name){alert('Please add a workout name.');return;}
+  var exs=_exRows.filter(function(r){return r.name.trim();}).map(function(r){
+    return {name:r.name.trim(),sets:r.sets.trim()||'3 \u00d7 12 reps',desc:'',tip:''};
+  });
+  if(exs.length===0){alert('Add at least one exercise.');return;}
+  customDays.push({label:label,name:name,type:_selType,desc:desc,exercises:exs,_custom:true});
+  saveCustomDays();
+  closeModal();
+  renderNav();
+  setDay(BUILTIN_DAYS.length+customDays.length-1);
+}
+
+if(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)){document.getElementById('installHint').style.display='block';}
+renderNav();renderDay();
+</script>
+</body>
+</html>
